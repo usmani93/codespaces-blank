@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, where, getDocs, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuthContext } from '../contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
-import { MessageSquare, ThumbsUp, Check } from 'lucide-react';
+import { ThumbsUp, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import type { Question, Answer } from '../types';
 
@@ -15,6 +15,8 @@ export default function QuestionDetail() {
   const [newAnswer, setNewAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuthContext();
+
+  let picture: Iterable<ReactNode> | JSX.Element
 
   useEffect(() => {
     async function fetchQuestionAndAnswers() {
@@ -54,6 +56,12 @@ export default function QuestionDetail() {
         isAccepted: false
       });
 
+      if(id != undefined)
+      {
+        const counterId = doc(db, 'questions', id.toString());
+        await updateDoc(counterId, { 'answersCount' : increment(1)});
+      }
+
       setNewAnswer('');
       // Refresh answers
       const answersQuery = query(collection(db, 'answers'), where('questionId', '==', id));
@@ -79,6 +87,14 @@ export default function QuestionDetail() {
     );
   }
 
+  if(user != null || user != undefined){
+    if(user.photoURL != null){
+      picture = <img src={user.photoURL.toString()} className="h-8 w-8 rounded-full" />;
+    }
+  } else {
+    picture = <span />;
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -99,11 +115,7 @@ export default function QuestionDetail() {
 
             <div className="mt-6 flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <img
-                  src={question.authorPhotoURL || `https://ui-avatars.com/api/?name=${question.authorName}`}
-                  alt={question.authorName}
-                  className="h-8 w-8 rounded-full"
-                />
+                {picture}
                 <span className="text-sm text-gray-600">{question.authorName}</span>
               </div>
               <span className="text-sm text-gray-500">
@@ -140,11 +152,7 @@ export default function QuestionDetail() {
 
                   <div className="mt-6 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <img
-                        src={answer.authorPhotoURL || `https://ui-avatars.com/api/?name=${answer.authorName}`}
-                        alt={answer.authorName}
-                        className="h-8 w-8 rounded-full"
-                      />
+                      {picture}
                       <span className="text-sm text-gray-600">{answer.authorName}</span>
                     </div>
                     <span className="text-sm text-gray-500">

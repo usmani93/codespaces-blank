@@ -32,7 +32,7 @@ export default function AskQuestion() {
         votes: 0
       });
       
-      navigate(`/question/${questionRef.id}`);
+      navigate(`/questions/${questionRef.id}`);
     } catch (error) {
       console.error('Error adding question:', error);
       alert('Failed to post question. Please try again.');
